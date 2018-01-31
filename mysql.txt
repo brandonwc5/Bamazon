@@ -1,0 +1,9 @@
+DROP database if exists Bamazon;
+CREATE database Bamazon;
+CREATE table items(
+	ID INTEGER(11) auto_increment not null,
+    ProductName varchar (30) not null,
+    Cost float (10) not null,
+    DepartmentName varchar(20),
+    StockQuantity int (10)
+);
