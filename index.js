@@ -3,9 +3,9 @@ var mySql = require('mySql');
 
 var connection = mySql.createConnection({
 	host: "localHost",
-	port: 3380,
+	port: 3308,
 	user: "root",
-	password: "",
+	password: "p1fb2g3j4",
 	dataBase: "Bamazon"
 })
 
@@ -16,30 +16,54 @@ connection.connect(function(err, result){
 	start();
 })
 
-function start(){
-	inquirer.prompt({
-		name: "itemID",
-		type: "input",
-		message: "What is the ID of the product you would like to purchase?"
-	}, 
-	{
-		name: "howMany",
-		type: "input",
-		message: "How many would you like to purchase?"
-	}).then(function(answer){
-		if(answer.itemID===""){
-			console.log("We need an item ID.");
-			start();
-		} else {
-			findID();
-		} 
-	})
-}
+function start() {
+    //get item ID and desired quantity from user. Pass to purchase from Database
+    inquirer.prompt([
+
+        {
+            name: "ID",
+            type: "input",
+            message: "What is the item number of the item you wish to purchase?"
+        }, {
+            name: 'Quantity',
+            type: 'input',
+            message: "How many would you like to buy?"
+        }
+
+    ]).then(function(answers) {
+        //set captured input as variables, pass variables as parameters.
+        var quantityDesired = answers.Quantity;
+        var IDDesired = answers.ID;
+        purchaseFromDatabase(IDDesired, quantityDesired);
+    });
+
+}; //end inquireForPurchase
+function purchaseFromDatabase(ID, quantityNeeded) {
+    //check quantity of desired purchase. Minus quantity of the itemID from database if possible. Else inform user "Quantity desired not in stock" 
+    connection.query('SELECT * FROM Products WHERE ItemID = ' + ID, function(error, response) {
+        if (error) { console.log(error) };
+
+        //if in stock
+        if (quantityNeeded <= response[0].StockQuantity) {
+            //calculate cost
+            var totalCost = response[0].Price * quantityNeeded;
+            //inform user
+            console.log("We have what you need! I'll have your order right out!");
+            console.log("Your total cost for " + quantityNeeded + " " + response[0].ProductName + " is " + totalCost + ". Thank you for your Business!");
+            //update database, minus purchased quantity
+            connection.query('UPDATE Products SET StockQuantity = StockQuantity - ' + quantityNeeded + ' WHERE ItemID = ' + ID);
+        } else {
+            console.log("Our apologies. We don't have enough " + response[0].ProductName + " to fulfill your order.");
+        };
+        displayAll();//recursive shopping is best shopping! Shop till you drop!
+    });
+
+};
 start();
-function findID(answer){
+/*function findID(answer){
   console.log("Finding items that match that ID...\n");
   var query = connection.query(
-  	"Select * from Bamazon", 
+  	"Select * from Bamazon.", 
     function(err, res) {
       console.log(res.affectedRows + " products updated!\n");
       // Call deleteProduct AFTER the UPDATE completes
@@ -49,4 +73,4 @@ function findID(answer){
 
   // logs the actual query being run
   console.log(query.sql);
-}
+}*/
