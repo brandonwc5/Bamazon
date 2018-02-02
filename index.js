@@ -1,22 +1,40 @@
 var inquirer = require('inquirer');
 var mySql = require('mySql');
-
+var Table = require('cli-table');
 var connection = mySql.createConnection({
 	host: "localHost",
 	port: 3308,
 	user: "root",
-	password: "p1fb2g3j4",
+	password: "",
 	dataBase: "Bamazon"
 })
 
-connection.connect(function(err, result){
-	if(err){
-		throw err;
-	}
-	start();
-})
+function displayAll() {
+    //show all ids, names, and products from database.
+    connection.query('SELECT * FROM Products', function(error, response) {
+        if (error) { console.log(error) };
+        //New instance of our constructor
+        var theDisplayTable = new Table({
+            //declare the value categories
+            head: ['Item ID', 'Product Name', 'Category', 'Price', 'Quantity'],
+            //set widths to scale
+            colWidths: [10, 30, 18, 10, 14]
+        });
+        //for each row of the loop
+        for (i = 0; i < response.length; i++) {
+            //push data to table
+            theDisplayTable.push(
+                [response[i].ItemID, response[i].ProductName, response[i].DepartmentName, response[i].Price, response[i].StockQuantity]
+            );
+        }
+        //log the completed table to console
+        console.log(theDisplayTable.toString());
+        inquireForPurchase();
+    });
 
-function start() {
+
+}; //end displayAll
+function inquireForPurchase() {
     //get item ID and desired quantity from user. Pass to purchase from Database
     inquirer.prompt([
 
@@ -28,7 +46,7 @@ function start() {
             name: 'Quantity',
             type: 'input',
             message: "How many would you like to buy?"
-        }
+        },
 
     ]).then(function(answers) {
         //set captured input as variables, pass variables as parameters.
@@ -38,6 +56,7 @@ function start() {
     });
 
 }; //end inquireForPurchase
+
 function purchaseFromDatabase(ID, quantityNeeded) {
     //check quantity of desired purchase. Minus quantity of the itemID from database if possible. Else inform user "Quantity desired not in stock" 
     connection.query('SELECT * FROM Products WHERE ItemID = ' + ID, function(error, response) {
@@ -58,8 +77,9 @@ function purchaseFromDatabase(ID, quantityNeeded) {
         displayAll();//recursive shopping is best shopping! Shop till you drop!
     });
 
-};
-start();
+}; //end purchaseFromDatabase
+
+displayAll();
 /*function findID(answer){
   console.log("Finding items that match that ID...\n");
   var query = connection.query(
